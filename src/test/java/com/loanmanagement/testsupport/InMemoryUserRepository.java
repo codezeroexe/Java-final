@@ -6,6 +6,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.List;
+
+import com.loanmanagement.dao.AdminBootstrapRepository;
+import com.loanmanagement.dao.AdminUserRepository;
 import com.loanmanagement.dao.CibilRepository;
 import com.loanmanagement.dao.UserRepository;
 import com.loanmanagement.model.AccountStatus;
@@ -13,9 +17,12 @@ import com.loanmanagement.model.User;
 import com.loanmanagement.model.UserRole;
 import com.loanmanagement.service.FailedLoginUpdate;
 import com.loanmanagement.service.RegisterCommand;
+import com.loanmanagement.service.UserProfileUpdate;
+import com.loanmanagement.service.UserSearchField;
 
 /** In-memory user store for service and screen tests. No database. */
-public final class InMemoryUserRepository implements UserRepository, CibilRepository {
+public final class InMemoryUserRepository implements UserRepository, CibilRepository,
+        AdminUserRepository, AdminBootstrapRepository {
     private final Map<Long, User> byId = new HashMap<>();
     private final Map<String, ResetToken> resetTokens = new HashMap<>();
     private long nextId = 1;
@@ -122,5 +129,65 @@ public final class InMemoryUserRepository implements UserRepository, CibilReposi
     }
 
     private record ResetToken(long userId, Instant expiresAt) {
+    }
+
+    @Override
+    public List<User> searchUsers(UserSearchField field, String query) {
+        return byId.values().stream()
+                .filter(user -> matches(fieldValue(user, field), query, field.exactMatch()))
+                .toList();
+    }
+
+    @Override
+    public Optional<User> findActiveUser(long userId) {
+        return Optional.ofNullable(byId.get(userId));
+    }
+
+    @Override
+    public void updateUser(long actorId, long userId, UserProfileUpdate update) {
+        User user = byId.get(userId);
+        byId.put(userId, new User(user.id(), update.firstName(), update.lastName(), update.mobile(),
+                update.email().toLowerCase(Locale.ROOT), update.location(), user.username(), user.passwordHash(),
+                user.mustChangePassword(), user.role(), user.status(), user.failedAttempts(), user.pan(),
+                user.cibilScore(), user.createdAt(), Instant.now()));
+    }
+
+    @Override
+    public void updateStatus(long actorId, long userId, AccountStatus status) {
+        User user = byId.get(userId);
+        byId.put(userId, withState(user, status, user.failedAttempts()));
+    }
+
+    @Override
+    public void anonymizeUser(long actorId, long userId) {
+        User user = byId.get(userId);
+        byId.put(userId, new User(user.id(), "Deleted", "User", "0000000000", "deleted-" + userId + "@example.invalid",
+                null, "deleted-" + userId, user.passwordHash(), false, user.role(), AccountStatus.INACTIVE, 0,
+                null, user.cibilScore(), user.createdAt(), Instant.now()));
+    }
+
+    @Override
+    public void createAdmin(String username, String email, String passwordHash) {
+        Instant now = Instant.now();
+        User admin = new User(nextId++, "System", "Admin", "0000000000", email, null, username, passwordHash,
+                false, UserRole.ROLE_ADMIN, AccountStatus.ACTIVE, 0, null, null, now, now);
+        byId.put(admin.id(), admin);
+    }
+
+    private static String fieldValue(User user, UserSearchField field) {
+        return switch (field) {
+            case FIRST_NAME -> user.firstName();
+            case LAST_NAME -> user.lastName();
+            case EMAIL -> user.email();
+            case MOBILE -> user.mobile();
+            case USERNAME -> user.username();
+            case STATUS -> user.status().name();
+        };
+    }
+
+    private static boolean matches(String value, String query, boolean exact) {
+        String needle = query.trim().toLowerCase(Locale.ROOT);
+        String haystack = value.toLowerCase(Locale.ROOT);
+        return exact ? haystack.equals(needle) : haystack.contains(needle);
     }
 }

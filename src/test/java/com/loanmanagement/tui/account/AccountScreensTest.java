@@ -14,6 +14,7 @@ import com.googlecode.lanterna.input.KeyType;
 import com.loanmanagement.notification.EmailSender;
 import com.loanmanagement.security.PasswordHasher;
 import com.loanmanagement.service.AuthenticationResult;
+import com.loanmanagement.service.AdminUserService;
 import com.loanmanagement.service.AuthenticationService;
 import com.loanmanagement.service.AuthenticationStatus;
 import com.loanmanagement.service.CibilService;
@@ -50,7 +51,8 @@ class AccountScreensTest {
         context = new AppContext(authentication,
                 new PasswordResetService(users, hasher, sender),
                 new CibilService(users, users, authentication, rates, sender),
-                new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender));
+                new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender),
+                new AdminUserService(users, sender));
     }
 
     private void registerAsha() {

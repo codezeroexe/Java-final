@@ -14,6 +14,7 @@ import com.loanmanagement.service.CibilOnboardingResult;
 import com.loanmanagement.service.RegisterCommand;
 import com.loanmanagement.tui.component.ChoiceField;
 import com.loanmanagement.tui.component.Field;
+import com.loanmanagement.tui.admin.AdminScreens;
 import com.loanmanagement.tui.component.Form;
 import com.loanmanagement.tui.component.TextField;
 import com.loanmanagement.tui.render.TerminalRenderer.Tone;
@@ -206,17 +207,9 @@ public final class AccountScreens {
             return changePassword(ctx, user);
         }
         if (user.role() == UserRole.ROLE_ADMIN) {
-            return adminPending(user);
+            return AdminScreens.home(ctx, new Session(user));
         }
         return UserScreens.home(ctx, new Session(user));
-    }
-
-    /** Admin screens arrive in a later phase. Until then the plain console handles admin work. */
-    static Screen adminPending(User user) {
-        return new HomeScreen("Welcome, " + user.firstName() + " " + user.lastName(),
-                List.of("The admin console arrives in a later TUI phase.",
-                        "Use the plain console for admin tasks."),
-                List.of(new HomeScreen.Entry("Logout", Navigation.Pop::new)));
     }
 
     private static Screen message(String title, List<String> lines, Tone tone) {

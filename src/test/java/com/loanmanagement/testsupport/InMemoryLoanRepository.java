@@ -44,6 +44,14 @@ public final class InMemoryLoanRepository implements LoanRepository {
 
     @Override
     public void review(long adminId, long loanId, LoanStatus status, String note, LoanCalculation calculation) {
-        // Review is not exercised by the user-facing screen tests.
+        LoanApplication loan = findById(loanId).orElseThrow();
+        loans.set(loans.indexOf(loan), new LoanApplication(loan.id(), loan.userId(), loan.firstName(),
+                loan.lastName(), loan.email(), loan.mobile(), loan.loanAmount(), loan.loanType(),
+                loan.durationMonths(), loan.interestRate(), loan.annualIncome(), loan.purpose(), status,
+                status == LoanStatus.REJECTED ? note : null,
+                status == LoanStatus.NEEDS_MORE_INFO ? note : null, loan.appliedAt(),
+                calculation == null ? null : calculation.emi(),
+                calculation == null ? null : calculation.totalInterest(),
+                calculation == null ? null : calculation.totalPayable()));
     }
 }

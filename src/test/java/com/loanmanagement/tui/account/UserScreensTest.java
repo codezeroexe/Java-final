@@ -11,6 +11,7 @@ import com.googlecode.lanterna.input.KeyType;
 import com.loanmanagement.model.User;
 import com.loanmanagement.notification.EmailSender;
 import com.loanmanagement.security.PasswordHasher;
+import com.loanmanagement.service.AdminUserService;
 import com.loanmanagement.service.AuthenticationService;
 import com.loanmanagement.service.CibilService;
 import com.loanmanagement.service.EmiCalculator;
@@ -41,7 +42,8 @@ class UserScreensTest {
         context = new AppContext(authentication,
                 new PasswordResetService(users, hasher, sender),
                 new CibilService(users, users, authentication, rates, sender),
-                new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender));
+                new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender),
+                new AdminUserService(users, sender));
         asha = authentication.register(new RegisterCommand("Asha", "Patel", "9876543210", "asha@example.com",
                 "Pune", "asha", "Asha!Pass1".toCharArray()));
         session = new Session(asha);

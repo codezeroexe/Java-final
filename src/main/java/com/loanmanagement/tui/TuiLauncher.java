@@ -10,6 +10,7 @@ import com.loanmanagement.notification.SmtpEmailSender;
 import com.loanmanagement.security.PasswordHasher;
 import com.loanmanagement.service.AdminBootstrapper;
 import com.loanmanagement.service.AuthenticationService;
+import com.loanmanagement.service.AdminUserService;
 import com.loanmanagement.service.CibilService;
 import com.loanmanagement.service.EmiCalculator;
 import com.loanmanagement.service.LoanService;
@@ -45,7 +46,8 @@ public final class TuiLauncher {
         AppContext context = new AppContext(authentication,
                 new PasswordResetService(users, passwordHasher, emailSender),
                 new CibilService(users, users, authentication, interestRates, emailSender),
-                new LoanService(new JdbcLoanRepository(connections), interestRates, new EmiCalculator(), emailSender));
+                new LoanService(new JdbcLoanRepository(connections), interestRates, new EmiCalculator(), emailSender),
+                new AdminUserService(users, emailSender));
 
         try (TerminalRenderer renderer = TerminalRenderer.openTerminal()) {
             new TuiApplication(renderer).run(AccountScreens.root(context));
