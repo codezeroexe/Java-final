@@ -47,7 +47,7 @@ Rules:
 
 **Exit check:** spike screen renders aligned on two terminals; decisions recorded in `plan.md` and `README.md`.
 
-**Status (in progress):**
+**Status (Phase 0, done except real-terminal check):**
 - Library: Lanterna **3.1.5** (latest stable; 3.2.0 is alpha). Added to `build.gradle`. Full suite still green.
 - Width check via Lanterna virtual terminal: `₹`, `●`, `✻`, `❯`, and CJK (`漢字`, width 2) occupy the expected cells and align. Decomposed `e` + combining mark misaligns. Rule: NFC-normalize all text before layout.
 - Throwaway spike removed from source.
@@ -148,3 +148,11 @@ Rules:
 - Renderer and screen tests pass without MySQL. Integration pass documented.
 - Plain console fallback works. `README.md` covers how to launch the TUI and the fallback.
 - `plan.md` and `README.md` record the `Scanner` deviation and library choice.
+
+## Progress log
+
+- **Phase 0:** Lanterna 3.1.5 added. Width behavior verified on the virtual terminal. Real-terminal check done on the preview screen (aligned, Ctrl-C handled, terminal restored after SIGTERM).
+- **Phase 1:** `tui/render`: width helpers and cell renderer. Tests green.
+- **Phase 2:** `tui/screen` and `tui/component`: stack, render loop, menu, text field, table, status bar, dialog, home screen. Tests green. Field focus covered by form tests in Phase 3.
+- **Phase 3:** `tui/account`: root menu, register, login, onboarding, forgot and reset password, temporary-password change, placeholder session home. Driven by key-sequence tests against the real services and the shared in-memory repository. Field-level validation shows as one form-level message (service returns one message per failure).
+- Decisions taken with recommended defaults, not yet confirmed by user: Lanterna, `Scanner` replaced in the TUI layer, console kept as fallback, `NO_COLOR` honored.

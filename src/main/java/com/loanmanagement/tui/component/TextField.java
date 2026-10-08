@@ -11,7 +11,7 @@ import com.loanmanagement.tui.screen.Area;
  * Single-line text input. Secret fields show masks, never the value. Editing clears any error,
  * so a stale validation message does not survive a correction.
  */
-public final class TextField {
+public final class TextField implements Field {
     private final String label;
     private final boolean secret;
     private final int maxLength;
@@ -38,7 +38,12 @@ public final class TextField {
         this.error = message;
     }
 
-    /** Returns true when the key was used for editing. */
+    @Override
+    public int height() {
+        return error == null ? 1 : 2;
+    }
+
+    @Override
     public boolean handle(KeyStroke key) {
         if (key.getKeyType() == KeyType.Backspace) {
             if (!value.isEmpty()) {
@@ -49,9 +54,8 @@ public final class TextField {
             return true;
         }
         if (key.getKeyType() == KeyType.Character && key.getCharacter() != null) {
-            String typed = String.valueOf(key.getCharacter());
             if (value.codePointCount(0, value.length()) < maxLength) {
-                value.append(typed);
+                value.append(key.getCharacter());
             }
             error = null;
             return true;
@@ -59,14 +63,19 @@ public final class TextField {
         return false;
     }
 
-    /** Draws the label and value on the first row, and any error on the second. */
-    public void render(TerminalRenderer renderer, Area area) {
+    @Override
+    public void render(TerminalRenderer renderer, Area area, boolean focused) {
         String shown = secret ? TextWidth.mask(value) : value.toString();
         renderer.text(area.column(), area.row(),
-                TextWidth.fit(label + ": " + shown, area.width()), Tone.PLAIN);
+                TextWidth.fit(label + ": " + shown, area.width()), focused ? Tone.ACCENT : Tone.PLAIN);
         if (error != null && area.height() > 1) {
             renderer.text(area.column(), area.row() + 1,
                     TextWidth.fit(error, area.width()), Tone.DANGER);
         }
+    }
+
+    /** Render without focus styling. Kept for callers that draw a single field. */
+    public void render(TerminalRenderer renderer, Area area) {
+        render(renderer, area, false);
     }
 }
