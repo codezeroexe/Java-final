@@ -68,6 +68,13 @@ public final class HomeScreen implements Screen {
     }
 
     @Override
+    public List<StatusBar.Hint> keyHelp() {
+        return List.of(new StatusBar.Hint("↑↓", "move"), new StatusBar.Hint("Enter", "select"),
+                new StatusBar.Hint("1-9", "choose"), new StatusBar.Hint("q", "quit"),
+                new StatusBar.Hint("Ctrl-C", "exit"));
+    }
+
+    @Override
     public Navigation onKey(KeyStroke key) {
         if (key.getKeyType() == KeyType.Character && key.getCharacter() != null
                 && Character.toLowerCase(key.getCharacter()) == 'q') {

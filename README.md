@@ -64,10 +64,21 @@ From project root:
 
 ```sh
 gradle clean test
-gradle run
+gradle installDist
+build/install/loan-management-system/bin/loan-management-system
 ```
 
-Application startup connects to MySQL, applies schema migration, optionally seeds initial admin, then displays console menu. `gradle test` runs unit tests without requiring MySQL. Database integration and live SMTP delivery require their respective services and credentials.
+Start the app from the installed script. In testing, `gradle run` did not pass the terminal through to the app, so the full-screen interface did not start that way.
+
+Startup connects to MySQL, applies schema migration, and seeds the initial admin when configured. When run in an interactive terminal, the full-screen interface opens. Add `--plain` to use the line-based console menu instead. The plain menu is also used when input or output is not a terminal. `gradle test` runs unit tests without requiring MySQL. Database integration and live SMTP delivery require their respective services and credentials.
+
+### Full-screen interface
+
+- Move with arrow keys. Choose a numbered item with its digit (1 to 9) or Enter.
+- In forms, Tab or arrow down moves to the next field, Enter moves on or submits from the last field, and Esc goes back.
+- F1 shows the keys for the current screen.
+- Ctrl-C exits from any screen. The terminal must be at least 80 by 24; smaller sizes show a resize notice.
+- Set `NO_COLOR=1` to turn off colors. Status is also shown in text, so colors are not required.
 
 ## Console Workflows
 

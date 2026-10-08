@@ -23,7 +23,25 @@ public final class Main {
     private Main() {
     }
 
+    /** The plain console is used when {@code --plain} is passed or when input or output is not a terminal. */
+    static boolean isPlainRequested(String[] args) {
+        for (String arg : args) {
+            if ("--plain".equals(arg)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void main(String[] args) {
+        if (!isPlainRequested(args) && com.loanmanagement.tui.TuiLauncher.isInteractive()) {
+            try {
+                com.loanmanagement.tui.TuiLauncher.main(args);
+            } catch (Exception exception) {
+                System.err.println(exception.getMessage());
+            }
+            return;
+        }
         try {
             ConnectionFactory connections = ConnectionFactory.fromEnvironment();
             new SchemaMigrator(connections).migrate();

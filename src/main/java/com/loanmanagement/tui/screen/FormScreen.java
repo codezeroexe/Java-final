@@ -51,6 +51,13 @@ public final class FormScreen implements Screen {
     }
 
     @Override
+    public List<StatusBar.Hint> keyHelp() {
+        return List.of(new StatusBar.Hint("↑↓ / Tab", "move between fields"),
+                new StatusBar.Hint("←→", "change a choice"), new StatusBar.Hint("Enter", "next or submit"),
+                new StatusBar.Hint("Esc", "back"));
+    }
+
+    @Override
     public Navigation onKey(KeyStroke key) {
         Optional<Form.Outcome> outcome = form.handle(key);
         if (outcome.isEmpty()) {

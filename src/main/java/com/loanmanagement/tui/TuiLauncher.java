@@ -1,5 +1,7 @@
 package com.loanmanagement.tui;
 
+import java.io.Console;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 
 import com.loanmanagement.dao.JdbcUserRepository;
@@ -27,6 +29,25 @@ import com.loanmanagement.tui.screen.TuiApplication;
  */
 public final class TuiLauncher {
     private TuiLauncher() {
+    }
+
+    /**
+     * True when both input and output are a real terminal. {@code Console.isTerminal()} exists from JDK 22;
+     * on JDK 21 a non-null console is taken as a terminal.
+     */
+    public static boolean isInteractive() {
+        Console console = System.console();
+        if (console == null) {
+            return false;
+        }
+        try {
+            Method isTerminal = Console.class.getMethod("isTerminal");
+            return (boolean) isTerminal.invoke(console);
+        } catch (NoSuchMethodException exception) {
+            return true;
+        } catch (ReflectiveOperationException exception) {
+            return false;
+        }
     }
 
     public static void main(String[] args) throws Exception {

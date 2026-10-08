@@ -10,11 +10,13 @@ No Gradle wrapper is committed; use a system `gradle` (9.5+) and JDK 21+ (projec
 gradle clean test                                              # all tests
 gradle test --tests 'com.loanmanagement.service.LoanServiceTest'           # one class
 gradle test --tests 'com.loanmanagement.service.LoanServiceTest.someMethod' # one method
-gradle run                                                     # start console app (needs MySQL + DB_* env vars)
+gradle installDist && build/install/loan-management-system/bin/loan-management-system   # run app (needs MySQL + DB_* env vars)
+build/install/loan-management-system/bin/loan-management-system --plain   # line-based console instead of the TUI
 gradle jar                                                     # build/libs/loan-management-system-1.0.0.jar
 ```
 
 - `JdbcIntegrationTest` hardcodes `jdbc:mysql://127.0.0.1:3306/loan_management_test` with user `loan_test` / `loan_test_pass`, and has no skip guard. It fails when MySQL is down or that DB/user is missing. Unit tests need no database. To run only those, filter out `com.loanmanagement.integration.*`.
+- `gradle run` did not pass the terminal through in testing; use the installDist start script for the TUI.
 - Runtime config comes from environment variables only (`DB_URL`, `DB_USER`, `DB_PASSWORD`, `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SMTP_*`). `.env.example` is not loaded automatically. The database itself must exist; the app creates tables via migration.
 
 ## Architecture
@@ -32,7 +34,9 @@ Layering, enforced by convention (not by modules):
 - `validation/InputValidator`: input format rules.
 - `model/`: records and enums (`User`, `LoanApplication`, `LoanType`, `LoanStatus`, `UserRole`, `AccountStatus`).
 
-`Main` is the only composition root. It wires every service by hand, runs migration, seeds the admin, then starts `ConsoleApplication`. Add new collaborators there.
+Full-screen TUI lives in `tui/` (Lanterna 3.1.5): `render/` is the cell renderer and width-aware text helpers, `screen/` holds the `Screen` interface, `Navigation` results, the stack-based `TuiApplication` loop, and shared screens, `component/` holds form fields, `Table`, `Dialog`, and `StatusBar`, `account/` and `admin/` hold the flows that call the same services as the console. `TuiLauncher` wires services the way `Main` does and runs before the terminal is taken over. `Main` picks the TUI when stdin and stdout are a terminal, and the console otherwise or with `--plain`. Design and phases: `tui-plan.md`.
+
+`Main` is the only composition root for the console path. It wires every service by hand, runs migration, seeds the admin, then starts `ConsoleApplication`. Add new collaborators there.
 
 ### Behaviour that spans files
 

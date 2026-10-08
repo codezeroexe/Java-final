@@ -90,6 +90,12 @@ public final class LoansScreen implements Screen {
     }
 
     @Override
+    public List<StatusBar.Hint> keyHelp() {
+        return List.of(new StatusBar.Hint("↑↓", "move"), new StatusBar.Hint("Enter", "details"),
+                new StatusBar.Hint("Esc", "back"));
+    }
+
+    @Override
     public Navigation onKey(KeyStroke key) {
         if (key.getKeyType() == KeyType.Escape) {
             return new Navigation.Pop();
