@@ -24,12 +24,19 @@ public final class HomeScreen implements Screen {
     private final List<String> tips;
     private final List<Entry> entries;
     private final MenuList menu;
+    private final Supplier<String> status;
 
     public HomeScreen(String title, List<String> tips, List<Entry> entries) {
+        this(title, tips, entries, null);
+    }
+
+    /** {@code status} is drawn on the row above the key hints. Null hides it. */
+    public HomeScreen(String title, List<String> tips, List<Entry> entries, Supplier<String> status) {
         this.title = title;
         this.tips = List.copyOf(tips);
         this.entries = List.copyOf(entries);
         this.menu = new MenuList(entries.stream().map(Entry::label).toList());
+        this.status = status;
     }
 
     @Override
@@ -48,8 +55,12 @@ public final class HomeScreen implements Screen {
 
         int menuRow = area.row() + boxHeight + 1;
         int hintRow = area.row() + area.height() - 1;
-        int menuHeight = Math.max(0, hintRow - menuRow - 1);
-        menu.render(renderer, new Area(area.column(), menuRow, area.width(), menuHeight));
+        int menuBottom = status == null ? hintRow - 1 : hintRow - 2;
+        menu.render(renderer, new Area(area.column(), menuRow, area.width(), Math.max(0, menuBottom - menuRow)));
+        if (status != null) {
+            StatusBar.facts(renderer, new Area(area.column(), hintRow - 1, area.width(), 1),
+                    List.of(status.get()));
+        }
         StatusBar.hints(renderer, new Area(area.column(), hintRow, area.width(), 1), List.of(
                 new StatusBar.Hint("↑↓", "move"),
                 new StatusBar.Hint("Enter", "select"),

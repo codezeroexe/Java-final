@@ -19,4 +19,10 @@ public record User(
         Integer cibilScore,
         Instant createdAt,
         Instant lastModifiedAt) {
+
+    /** Copy with the temporary-password flag changed. Records are immutable, so screens use this after a rotation. */
+    public User withMustChangePassword(boolean mustChange) {
+        return new User(id, firstName, lastName, mobile, email, location, username, passwordHash, mustChange,
+                role, status, failedAttempts, pan, cibilScore, createdAt, lastModifiedAt);
+    }
 }

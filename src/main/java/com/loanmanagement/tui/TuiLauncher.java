@@ -5,11 +5,14 @@ import java.sql.SQLException;
 import com.loanmanagement.dao.JdbcUserRepository;
 import com.loanmanagement.db.ConnectionFactory;
 import com.loanmanagement.db.SchemaMigrator;
+import com.loanmanagement.dao.JdbcLoanRepository;
 import com.loanmanagement.notification.SmtpEmailSender;
 import com.loanmanagement.security.PasswordHasher;
 import com.loanmanagement.service.AdminBootstrapper;
 import com.loanmanagement.service.AuthenticationService;
 import com.loanmanagement.service.CibilService;
+import com.loanmanagement.service.EmiCalculator;
+import com.loanmanagement.service.LoanService;
 import com.loanmanagement.service.InterestRatePolicy;
 import com.loanmanagement.service.PasswordResetService;
 import com.loanmanagement.tui.account.AccountScreens;
@@ -38,9 +41,11 @@ public final class TuiLauncher {
         new AdminBootstrapper(users, users, passwordHasher).bootstrapFromEnvironment();
         AuthenticationService authentication = new AuthenticationService(users, passwordHasher);
         SmtpEmailSender emailSender = new SmtpEmailSender();
+        InterestRatePolicy interestRates = new InterestRatePolicy();
         AppContext context = new AppContext(authentication,
                 new PasswordResetService(users, passwordHasher, emailSender),
-                new CibilService(users, users, authentication, new InterestRatePolicy(), emailSender));
+                new CibilService(users, users, authentication, interestRates, emailSender),
+                new LoanService(new JdbcLoanRepository(connections), interestRates, new EmiCalculator(), emailSender));
 
         try (TerminalRenderer renderer = TerminalRenderer.openTerminal()) {
             new TuiApplication(renderer).run(AccountScreens.root(context));

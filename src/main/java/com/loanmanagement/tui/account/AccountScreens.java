@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.loanmanagement.model.LoanType;
 import com.loanmanagement.model.User;
+import com.loanmanagement.model.UserRole;
 import com.loanmanagement.service.AuthenticationResult;
 import com.loanmanagement.service.AuthenticationStatus;
 import com.loanmanagement.service.CibilOnboardingCommand;
@@ -120,7 +121,7 @@ public final class AccountScreens {
         TextField location = new TextField("Location", false, TEXT);
         TextField pan = new TextField("PAN", false, 10);
         ChoiceField<LoanType> loanType = new ChoiceField<>("Loan type",
-                List.of(LoanType.values()), AccountScreens::loanTypeLabel);
+                List.of(LoanType.values()), UserScreens::loanTypeLabel);
         Form form = new Form(List.<Field>of(first, last, mobile, email, location, pan, loanType));
         return new FormScreen("CIBIL onboarding", "Creates your account and assesses your CIBIL score.", form, f -> {
             try {
@@ -188,7 +189,7 @@ public final class AccountScreens {
                     char[] chars = password.value().toCharArray();
                     try {
                         ctx.authentication().changePassword(user, chars);
-                        return new Navigation.Replace(sessionHome(user));
+                        return new Navigation.Replace(postSignIn(ctx, user.withMustChangePassword(false)));
                     } catch (IllegalArgumentException | IllegalStateException exception) {
                         f.setFormError(exception.getMessage());
                         return Navigation.STAY;
@@ -204,13 +205,17 @@ public final class AccountScreens {
         if (user.mustChangePassword()) {
             return changePassword(ctx, user);
         }
-        return sessionHome(user);
+        if (user.role() == UserRole.ROLE_ADMIN) {
+            return adminPending(user);
+        }
+        return UserScreens.home(ctx, new Session(user));
     }
 
-    /** Placeholder signed-in home. Phase 4 replaces it with the user menu. */
-    static Screen sessionHome(User user) {
+    /** Admin screens arrive in a later phase. Until then the plain console handles admin work. */
+    static Screen adminPending(User user) {
         return new HomeScreen("Welcome, " + user.firstName() + " " + user.lastName(),
-                List.of("Signed in as " + user.username() + "."),
+                List.of("The admin console arrives in a later TUI phase.",
+                        "Use the plain console for admin tasks."),
                 List.of(new HomeScreen.Entry("Logout", Navigation.Pop::new)));
     }
 
@@ -218,8 +223,4 @@ public final class AccountScreens {
         return new MessageScreen(title, lines, tone, Navigation.Pop::new);
     }
 
-    private static String loanTypeLabel(LoanType type) {
-        String name = type.name().toLowerCase(java.util.Locale.ROOT);
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1) + " loan";
-    }
 }

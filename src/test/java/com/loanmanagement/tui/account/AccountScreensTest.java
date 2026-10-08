@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +17,9 @@ import com.loanmanagement.service.AuthenticationResult;
 import com.loanmanagement.service.AuthenticationService;
 import com.loanmanagement.service.AuthenticationStatus;
 import com.loanmanagement.service.CibilService;
+import com.loanmanagement.service.EmiCalculator;
 import com.loanmanagement.service.InterestRatePolicy;
+import com.loanmanagement.service.LoanService;
 import com.loanmanagement.service.PasswordResetService;
 import com.loanmanagement.service.RegisterCommand;
 import com.loanmanagement.tui.screen.FormScreen;
@@ -27,54 +27,11 @@ import com.loanmanagement.tui.screen.HomeScreen;
 import com.loanmanagement.tui.screen.MessageScreen;
 import com.loanmanagement.tui.screen.Navigation;
 import com.loanmanagement.tui.screen.Screen;
+import com.loanmanagement.testsupport.ScreenDriver;
+import com.loanmanagement.testsupport.InMemoryLoanRepository;
 import com.loanmanagement.testsupport.InMemoryUserRepository;
 
 class AccountScreensTest {
-
-    /** Stack driver that applies navigation the way TuiApplication does, without a terminal. */
-    private static final class Driver {
-        private final Deque<Screen> stack = new ArrayDeque<>();
-
-        Driver(Screen root) {
-            stack.push(root);
-        }
-
-        Screen top() {
-            return stack.peek();
-        }
-
-        int depth() {
-            return stack.size();
-        }
-
-        void press(KeyType type) {
-            apply(top().onKey(new KeyStroke(type)));
-        }
-
-        void type(String text) {
-            for (char c : text.toCharArray()) {
-                apply(top().onKey(new KeyStroke(c, false, false)));
-            }
-        }
-
-        void enter(String text) {
-            type(text);
-            press(KeyType.Enter);
-        }
-
-        private void apply(Navigation navigation) {
-            if (navigation instanceof Navigation.Push push) {
-                stack.push(push.screen());
-            } else if (navigation instanceof Navigation.Pop) {
-                stack.pop();
-            } else if (navigation instanceof Navigation.Replace replace) {
-                stack.pop();
-                stack.push(replace.screen());
-            } else if (navigation instanceof Navigation.Quit) {
-                stack.clear();
-            }
-        }
-    }
 
     private InMemoryUserRepository users;
     private PasswordHasher hasher;
@@ -89,9 +46,11 @@ class AccountScreensTest {
         authentication = new AuthenticationService(users, hasher);
         sentBodies = new java.util.ArrayList<>();
         EmailSender sender = (recipient, subject, body) -> sentBodies.add(body);
+        InterestRatePolicy rates = new InterestRatePolicy();
         context = new AppContext(authentication,
                 new PasswordResetService(users, hasher, sender),
-                new CibilService(users, users, authentication, new InterestRatePolicy(), sender));
+                new CibilService(users, users, authentication, rates, sender),
+                new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender));
     }
 
     private void registerAsha() {
@@ -101,7 +60,7 @@ class AccountScreensTest {
 
     @Test
     void registerCreatesAccountThenReturnsToRoot() {
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("1");
         driver.enter("Asha");
         driver.enter("Patel");
@@ -120,7 +79,7 @@ class AccountScreensTest {
 
     @Test
     void registerWeakPasswordShowsErrorAndStaysOnForm() {
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("1");
         driver.enter("Asha");
         driver.enter("Patel");
@@ -139,7 +98,7 @@ class AccountScreensTest {
     @Test
     void loginSuccessOpensSessionAndLogoutReturnsToRoot() {
         registerAsha();
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("2");
         driver.enter("asha");
         driver.type("Asha!Pass1");
@@ -147,14 +106,14 @@ class AccountScreensTest {
 
         assertInstanceOf(HomeScreen.class, driver.top());
         assertEquals(2, driver.depth());
-        driver.press(KeyType.Enter);
+        driver.type("5");
         assertEquals(1, driver.depth());
     }
 
     @Test
     void loginWrongPasswordShowsAttemptsAndStays() {
         registerAsha();
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("2");
         driver.enter("asha");
         driver.type("Wrong!Pass1");
@@ -170,7 +129,7 @@ class AccountScreensTest {
         users.createGenerated(new RegisterCommand("Asha", "Patel", "9876543210", "asha@example.com",
                 "Pune", "asha_gen", "Temp!Pass1".toCharArray()), hasher.hash("Temp!Pass1".toCharArray()),
                 "ABCDE1234F", 742);
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("2");
         driver.enter("asha_gen");
         driver.type("Temp!Pass1");
@@ -186,7 +145,7 @@ class AccountScreensTest {
     @Test
     void forgotPasswordResetsAndAllowsNewLogin() {
         registerAsha();
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("4");
         driver.enter("asha");
         assertInstanceOf(FormScreen.class, driver.top());
@@ -206,7 +165,7 @@ class AccountScreensTest {
     @Test
     void resetWithBlankTokenDoesNotSubmit() {
         registerAsha();
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("4");
         driver.enter("asha");
         assertEquals(2, driver.depth());
@@ -219,7 +178,7 @@ class AccountScreensTest {
 
     @Test
     void onboardingCreatesAccountAndRoutesToTemporaryPasswordChange() {
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("3");
         driver.enter("Asha");
         driver.enter("Patel");
@@ -236,7 +195,7 @@ class AccountScreensTest {
 
     @Test
     void rootExitQuits() {
-        Driver driver = new Driver(AccountScreens.root(context));
+        ScreenDriver driver = new ScreenDriver(AccountScreens.root(context));
         driver.type("5");
         assertEquals(0, driver.depth());
     }
