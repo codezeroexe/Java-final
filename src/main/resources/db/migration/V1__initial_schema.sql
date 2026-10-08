@@ -1,0 +1,81 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    mobile CHAR(10) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    location VARCHAR(200) NULL,
+    username VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
+    role VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    failed_attempts INT NOT NULL DEFAULT 0,
+    pan CHAR(10) NULL,
+    cibil_score INT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    last_modified_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    deleted_at TIMESTAMP(6) NULL,
+    CONSTRAINT uq_users_username UNIQUE (username),
+    CONSTRAINT uq_users_email UNIQUE (email),
+    CONSTRAINT ck_users_role CHECK (role IN ('ROLE_USER', 'ROLE_ADMIN')),
+    CONSTRAINT ck_users_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    CONSTRAINT ck_users_failed_attempts CHECK (failed_attempts >= 0),
+    CONSTRAINT ck_users_cibil_score CHECK (cibil_score IS NULL OR cibil_score BETWEEN 600 AND 900),
+    INDEX ix_users_first_name (first_name),
+    INDEX ix_users_last_name (last_name),
+    INDEX ix_users_mobile (mobile),
+    INDEX ix_users_status (status)
+);
+
+CREATE TABLE IF NOT EXISTS loan_applications (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    loan_amount DECIMAL(14, 2) NOT NULL,
+    loan_type VARCHAR(30) NOT NULL,
+    loan_duration_months INT NOT NULL,
+    interest_rate DECIMAL(5, 2) NOT NULL,
+    annual_income DECIMAL(14, 2) NOT NULL,
+    purpose VARCHAR(1000) NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    rejection_reason VARCHAR(1000) NULL,
+    admin_note VARCHAR(1000) NULL,
+    applied_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    reviewed_at TIMESTAMP(6) NULL,
+    reviewed_by BIGINT NULL,
+    emi_amount DECIMAL(14, 2) NULL,
+    total_interest DECIMAL(14, 2) NULL,
+    total_payable DECIMAL(14, 2) NULL,
+    CONSTRAINT fk_loan_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_loan_reviewer FOREIGN KEY (reviewed_by) REFERENCES users (id),
+    CONSTRAINT ck_loan_amount CHECK (loan_amount > 0),
+    CONSTRAINT ck_loan_income CHECK (annual_income > 0),
+    CONSTRAINT ck_loan_duration CHECK (loan_duration_months > 0),
+    CONSTRAINT ck_loan_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'NEEDS_MORE_INFO')),
+    INDEX ix_loan_status (status),
+    INDEX ix_loan_user (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    actor_user_id BIGINT NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    target_user_id BIGINT NULL,
+    target_loan_id BIGINT NULL,
+    details VARCHAR(2000) NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_audit_actor FOREIGN KEY (actor_user_id) REFERENCES users (id),
+    INDEX ix_audit_target_user (target_user_id),
+    INDEX ix_audit_created_at (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token_hash CHAR(64) NOT NULL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    expires_at TIMESTAMP(6) NOT NULL,
+    used_at TIMESTAMP(6) NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    INDEX ix_reset_user (user_id),
+    INDEX ix_reset_expiry (expires_at)
+);
