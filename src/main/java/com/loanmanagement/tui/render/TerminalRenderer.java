@@ -128,21 +128,25 @@ public final class TerminalRenderer implements AutoCloseable {
         return screen.readInput();
     }
 
-    /** Character at a cell, for tests. Empty for the filler cell after a wide character. */
-    String cell(int column, int row) {
+    /** Character at a cell in the last flushed frame. Empty for the filler cell after a wide character. */
+    public String cell(int column, int row) {
         return screen.getFrontCharacter(new TerminalPosition(column, row)).getCharacterString();
     }
 
+    /**
+     * Restores the terminal. Safe to call more than once and from the shutdown hook after a normal
+     * close, since the screen may already be stopped.
+     */
     @Override
-    public void close() {
+    public synchronized void close() {
         if (closed) {
             return;
         }
         closed = true;
         try {
             screen.stopScreen();
-        } catch (IOException ignored) {
-            // The terminal is already gone; nothing left to restore.
+        } catch (IOException | RuntimeException ignored) {
+            // The terminal is already gone or already restored; nothing left to do.
         }
     }
 }
