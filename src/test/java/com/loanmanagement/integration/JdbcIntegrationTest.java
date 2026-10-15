@@ -56,11 +56,12 @@ class JdbcIntegrationTest {
     private EmailSender emailSender;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         ConnectionFactory connections = new ConnectionFactory(
                 "jdbc:mysql://127.0.0.1:3306/loan_management_test",
                 "loan_test",
                 "loan_test_pass");
+        new com.loanmanagement.db.SchemaMigrator(connections).migrate();
         clearTables();
         users = new JdbcUserRepository(connections);
         loans = new JdbcLoanRepository(connections);
@@ -210,5 +211,19 @@ class JdbcIntegrationTest {
         assertThrows(Exception.class, () -> authentication.register(new RegisterCommand(
                 "Other", "Name", "9876543211", "other@example.com", "Mumbai",
                 "duplicate_user", "Other!Pass1".toCharArray())));
+    }
+
+    @Test
+    void pendingNotificationIsQueuedListedAndMarkedSent() {
+        var outbox = new com.loanmanagement.dao.JdbcNotificationRepository(new ConnectionFactory(
+                "jdbc:mysql://127.0.0.1:3306/loan_management_test", "loan_test", "loan_test_pass"));
+        outbox.enqueue("asha@example.com", "Loan Application Submitted", "Body text", "SMTP down");
+        var pending = outbox.listPending(10);
+        assertTrue(pending.stream().anyMatch(notice -> notice.recipient().equals("asha@example.com")
+                && notice.subject().equals("Loan Application Submitted")));
+        long id = pending.stream().filter(notice -> notice.recipient().equals("asha@example.com"))
+                .findFirst().orElseThrow().id();
+        outbox.markSent(id);
+        assertTrue(outbox.listPending(10).stream().noneMatch(notice -> notice.id() == id));
     }
 }

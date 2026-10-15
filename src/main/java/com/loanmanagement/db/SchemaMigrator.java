@@ -6,9 +6,16 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
+/** Applies each migration once, in version order, tracked in {@code schema_migrations}. */
 public final class SchemaMigrator {
-    private static final int CURRENT_VERSION = 1;
+    private record Migration(int version, String resource) {
+    }
+
+    private static final List<Migration> MIGRATIONS = List.of(
+            new Migration(1, "/db/migration/V1__initial_schema.sql"),
+            new Migration(2, "/db/migration/V2__pending_notifications.sql"));
 
     private final ConnectionFactory connections;
 
@@ -24,18 +31,17 @@ public final class SchemaMigrator {
                         applied_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
                     )
                     """);
-
-            if (isApplied(connection, CURRENT_VERSION)) {
-                return;
-            }
-
-            String migration = readMigration();
-            for (String sql : migration.split(";")) {
-                if (!sql.isBlank()) {
-                    statement.execute(sql.trim());
+            for (Migration migration : MIGRATIONS) {
+                if (isApplied(connection, migration.version())) {
+                    continue;
                 }
+                for (String sql : readMigration(migration.resource()).split(";")) {
+                    if (!sql.isBlank()) {
+                        statement.execute(sql.trim());
+                    }
+                }
+                statement.executeUpdate("INSERT INTO schema_migrations (version) VALUES (" + migration.version() + ")");
             }
-            statement.executeUpdate("INSERT INTO schema_migrations (version) VALUES (" + CURRENT_VERSION + ")");
         }
     }
 
@@ -49,10 +55,10 @@ public final class SchemaMigrator {
         }
     }
 
-    private String readMigration() {
-        try (InputStream stream = SchemaMigrator.class.getResourceAsStream("/db/migration/V1__initial_schema.sql")) {
+    private String readMigration(String resource) {
+        try (InputStream stream = SchemaMigrator.class.getResourceAsStream(resource)) {
             if (stream == null) {
-                throw new IllegalStateException("Initial database migration is missing");
+                throw new IllegalStateException("Database migration is missing: " + resource);
             }
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException exception) {

@@ -23,6 +23,8 @@ import com.loanmanagement.service.EmiCalculator;
 import com.loanmanagement.service.InterestRatePolicy;
 import com.loanmanagement.service.LoanApplicationCommand;
 import com.loanmanagement.service.LoanService;
+import com.loanmanagement.service.NotificationService;
+import com.loanmanagement.testsupport.InMemoryNotificationRepository;
 import com.loanmanagement.service.PasswordResetService;
 import com.loanmanagement.service.RegisterCommand;
 import com.loanmanagement.tui.account.AppContext;
@@ -56,7 +58,8 @@ class AdminScreensTest {
                 new PasswordResetService(users, hasher, sender),
                 new CibilService(users, users, authentication, rates, sender),
                 new LoanService(loanRepo, rates, new EmiCalculator(), sender),
-                new AdminUserService(users, sender));
+                new AdminUserService(users, sender),
+                new NotificationService(new InMemoryNotificationRepository(), sender));
         users.createAdmin("admin", "admin@example.com", hasher.hash("Admin!Pass1".toCharArray()));
         admin = users.findByLoginIdentifier("admin").orElseThrow();
         asha = authentication.register(new RegisterCommand("Asha", "Patel", "9876543210", "asha@example.com",
@@ -66,6 +69,22 @@ class AdminScreensTest {
 
     private ScreenDriver dashboard() {
         return new ScreenDriver(AdminScreens.home(ctx, session));
+    }
+
+    @Test
+    void escapeOnDashboardLeavesIt() {
+        ScreenDriver driver = dashboard();
+        driver.press(KeyType.Escape);
+        assertEquals(0, driver.depth());
+    }
+
+    @Test
+    void resendPendingFromDashboardReportsCounts() {
+        ScreenDriver driver = dashboard();
+        driver.type("0");
+        assertInstanceOf(MessageScreen.class, driver.top());
+        driver.press(KeyType.Enter);
+        assertEquals(1, driver.depth());
     }
 
     @Test

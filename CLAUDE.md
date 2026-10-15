@@ -42,6 +42,7 @@ Full-screen TUI lives in `tui/` (Lanterna 3.1.5): `render/` is the cell renderer
 
 - **Lockout:** a failed regular-user login runs `SELECT ... FOR UPDATE` on the user row. The third failure sets status inactive. Admins are exempt. A successful login resets the counter.
 - **Email after commit:** services commit DB changes first, then send mail. A send failure is reported but does not roll back. CIBIL onboarding shows the temporary password once if its email fails.
+- **Mail retry:** `OutboxEmailSender` wraps SMTP for account and loan notices only. A failed send is stored in `pending_notifications` (migration V2). Admins resend via the TUI dashboard or console option 11 (`NotificationService`). Password-reset and credential mails are never queued, since the queue is plaintext in the database.
 - **Soft delete:** deleting a user anonymizes personal fields and keeps loans and audit rows, so foreign keys stay valid.
 - **Money:** `DECIMAL` in MySQL, `BigDecimal` in Java. Rounding is `HALF_UP` to 2 places. `EmiCalculator` handles zero-rate loans as `P / n`.
 - **CIBIL and rates:** CIBIL score is random in 600–900. This is a simulation, not a bureau lookup. `InterestRatePolicy` maps score bands to a rate range: 600–699 max, 700–799 midpoint, 800–900 min. The band mapping is project policy, not from the stage PDFs.

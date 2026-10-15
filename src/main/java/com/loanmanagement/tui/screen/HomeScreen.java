@@ -70,12 +70,16 @@ public final class HomeScreen implements Screen {
     @Override
     public List<StatusBar.Hint> keyHelp() {
         return List.of(new StatusBar.Hint("↑↓", "move"), new StatusBar.Hint("Enter", "select"),
-                new StatusBar.Hint("0-9", "choose"), new StatusBar.Hint("q", "quit"),
+                new StatusBar.Hint("0-9", "choose"), new StatusBar.Hint("Esc", "back"), new StatusBar.Hint("q", "quit"),
                 new StatusBar.Hint("Ctrl-C", "exit"));
     }
 
     @Override
     public Navigation onKey(KeyStroke key) {
+        // Escape goes back. On the root menu that leaves the application, the same as q.
+        if (key.getKeyType() == KeyType.Escape) {
+            return new Navigation.Pop();
+        }
         if (key.getKeyType() == KeyType.Character && key.getCharacter() != null
                 && Character.toLowerCase(key.getCharacter()) == 'q') {
             return new Navigation.Quit();

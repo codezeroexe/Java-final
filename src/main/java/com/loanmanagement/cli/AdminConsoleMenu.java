@@ -10,6 +10,7 @@ import com.loanmanagement.model.User;
 import com.loanmanagement.service.AdminActionResult;
 import com.loanmanagement.service.AdminUserService;
 import com.loanmanagement.service.LoanService;
+import com.loanmanagement.service.NotificationService;
 import com.loanmanagement.service.UserProfileUpdate;
 import com.loanmanagement.service.UserSearchField;
 
@@ -17,8 +18,11 @@ public final class AdminConsoleMenu {
     private final Scanner scanner;
     private final AdminUserService adminUsers;
     private final LoanService loans;
+    private final NotificationService notifications;
 
-    public AdminConsoleMenu(Scanner scanner, AdminUserService adminUsers, LoanService loans) {
+    public AdminConsoleMenu(Scanner scanner, AdminUserService adminUsers, LoanService loans,
+                            NotificationService notifications) {
+        this.notifications = notifications;
         this.scanner = scanner;
         this.adminUsers = adminUsers;
         this.loans = loans;
@@ -37,6 +41,7 @@ public final class AdminConsoleMenu {
             System.out.println("8. View loan details");
             System.out.println("9. Review loan");
             System.out.println("10. Logout");
+            System.out.println("11. Resend pending notifications");
             String choice = readLine("Select option: ");
             try {
                 switch (choice) {
@@ -50,12 +55,18 @@ public final class AdminConsoleMenu {
                     case "8" -> viewLoanDetails(loans.findAllForAdmin(admin));
                     case "9" -> reviewLoan(admin);
                     case "10" -> { return; }
+                    case "11" -> resendPending(admin);
                     default -> System.out.println("Invalid option.");
                 }
             } catch (IllegalArgumentException | SecurityException exception) {
                 System.out.println(exception.getMessage());
             }
         }
+    }
+
+    private void resendPending(User admin) {
+        NotificationService.ResendResult result = notifications.resendPending(admin);
+        System.out.println("Sent " + result.sent() + ", still failing " + result.failed() + ".");
     }
 
     private void searchUsers(User admin) {

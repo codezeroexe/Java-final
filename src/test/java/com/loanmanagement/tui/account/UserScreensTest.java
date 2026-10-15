@@ -17,6 +17,8 @@ import com.loanmanagement.service.CibilService;
 import com.loanmanagement.service.EmiCalculator;
 import com.loanmanagement.service.InterestRatePolicy;
 import com.loanmanagement.service.LoanService;
+import com.loanmanagement.service.NotificationService;
+import com.loanmanagement.testsupport.InMemoryNotificationRepository;
 import com.loanmanagement.service.PasswordResetService;
 import com.loanmanagement.service.RegisterCommand;
 import com.loanmanagement.testsupport.InMemoryLoanRepository;
@@ -43,7 +45,8 @@ class UserScreensTest {
                 new PasswordResetService(users, hasher, sender),
                 new CibilService(users, users, authentication, rates, sender),
                 new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender),
-                new AdminUserService(users, sender));
+                new AdminUserService(users, sender),
+                new NotificationService(new InMemoryNotificationRepository(), sender));
         asha = authentication.register(new RegisterCommand("Asha", "Patel", "9876543210", "asha@example.com",
                 "Pune", "asha", "Asha!Pass1".toCharArray()));
         session = new Session(asha);

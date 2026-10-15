@@ -10,6 +10,7 @@ import com.loanmanagement.model.LoanType;
 import com.loanmanagement.model.User;
 import com.loanmanagement.service.AdminActionResult;
 import com.loanmanagement.service.EmiCalculator;
+import com.loanmanagement.service.NotificationService;
 import com.loanmanagement.service.LoanCalculation;
 import com.loanmanagement.service.UserProfileUpdate;
 import com.loanmanagement.service.UserSearchField;
@@ -60,6 +61,7 @@ public final class AdminScreens {
                         new HomeScreen.Entry("View all loans", () -> push(allLoans(ctx, admin))),
                         new HomeScreen.Entry("View loan details", () -> push(loanIdForm(ctx, admin))),
                         new HomeScreen.Entry("Review loan", () -> push(reviewForm(ctx, admin))),
+                        new HomeScreen.Entry("Resend pending emails", () -> new Navigation.Push(resendScreen(ctx, admin))),
                         new HomeScreen.Entry("Logout", Navigation.Pop::new)),
                 session::statusLine);
     }
@@ -174,6 +176,16 @@ public final class AdminScreens {
                         }
                     }));
                 });
+    }
+
+    static Screen resendScreen(AppContext ctx, User admin) {
+        try {
+            NotificationService.ResendResult result = ctx.notifications().resendPending(admin);
+            return message("Resend pending emails", List.of("Sent " + result.sent() + ", still failing "
+                    + result.failed() + "."), result.failed() == 0 ? Tone.SUCCESS : Tone.WARNING);
+        } catch (SecurityException exception) {
+            return message("Resend pending emails", List.of(exception.getMessage()), Tone.DANGER);
+        }
     }
 
     static Screen allLoans(AppContext ctx, User admin) {

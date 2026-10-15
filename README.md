@@ -77,7 +77,7 @@ Startup connects to MySQL, applies schema migration, and seeds the initial admin
 - Move with arrow keys. Choose a numbered item with its digit (1 to 9) or Enter.
 - In forms, Tab or arrow down moves to the next field, Enter moves on or submits from the last field, and Esc goes back.
 - F1 shows the keys for the current screen.
-- Ctrl-C exits from any screen. The terminal must be at least 80 by 24; smaller sizes show a resize notice.
+- Esc goes back; on the root menu it leaves the application. Ctrl-C exits from any screen. The terminal must be at least 80 by 24; smaller sizes show a resize notice.
 - Set `NO_COLOR=1` to turn off colors. Status is also shown in text, so colors are not required.
 
 ## Console Workflows

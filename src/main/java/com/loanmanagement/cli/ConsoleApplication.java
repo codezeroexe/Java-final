@@ -12,6 +12,7 @@ import com.loanmanagement.service.CibilAssessmentResult;
 import com.loanmanagement.service.CibilOnboardingCommand;
 import com.loanmanagement.service.CibilOnboardingResult;
 import com.loanmanagement.service.CibilService;
+import com.loanmanagement.service.NotificationService;
 import com.loanmanagement.service.LoanApplicationCommand;
 import com.loanmanagement.service.LoanService;
 import com.loanmanagement.service.LoanSubmissionResult;
@@ -28,6 +29,7 @@ public final class ConsoleApplication {
     private final LoanService loans;
     private final CibilService cibil;
     private final PasswordResetService passwordResets;
+    private final NotificationService notifications;
 
     public ConsoleApplication(
             Scanner scanner,
@@ -35,13 +37,15 @@ public final class ConsoleApplication {
             AdminUserService adminUsers,
             LoanService loans,
             CibilService cibil,
-            PasswordResetService passwordResets) {
+            PasswordResetService passwordResets,
+            NotificationService notifications) {
         this.scanner = scanner;
         this.authentication = authentication;
         this.adminUsers = adminUsers;
         this.loans = loans;
         this.cibil = cibil;
         this.passwordResets = passwordResets;
+        this.notifications = notifications;
     }
 
     public void run() {
@@ -141,7 +145,7 @@ public final class ConsoleApplication {
         }
         System.out.println("Welcome, " + user.firstName() + " " + user.lastName());
         if (user.role() == UserRole.ROLE_ADMIN) {
-            new AdminConsoleMenu(scanner, adminUsers, loans).run(user);
+            new AdminConsoleMenu(scanner, adminUsers, loans, notifications).run(user);
             return;
         }
 

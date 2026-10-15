@@ -8,6 +8,10 @@ import com.loanmanagement.dao.JdbcUserRepository;
 import com.loanmanagement.db.ConnectionFactory;
 import com.loanmanagement.db.SchemaMigrator;
 import com.loanmanagement.dao.JdbcLoanRepository;
+import com.loanmanagement.dao.JdbcNotificationRepository;
+import com.loanmanagement.notification.EmailSender;
+import com.loanmanagement.notification.OutboxEmailSender;
+import com.loanmanagement.service.NotificationService;
 import com.loanmanagement.notification.SmtpEmailSender;
 import com.loanmanagement.security.PasswordHasher;
 import com.loanmanagement.service.AdminBootstrapper;
@@ -64,11 +68,14 @@ public final class TuiLauncher {
         AuthenticationService authentication = new AuthenticationService(users, passwordHasher);
         SmtpEmailSender emailSender = new SmtpEmailSender();
         InterestRatePolicy interestRates = new InterestRatePolicy();
+        JdbcNotificationRepository outbox = new JdbcNotificationRepository(connections);
+        EmailSender queuedSender = new OutboxEmailSender(emailSender, outbox);
         AppContext context = new AppContext(authentication,
                 new PasswordResetService(users, passwordHasher, emailSender),
                 new CibilService(users, users, authentication, interestRates, emailSender),
-                new LoanService(new JdbcLoanRepository(connections), interestRates, new EmiCalculator(), emailSender),
-                new AdminUserService(users, emailSender));
+                new LoanService(new JdbcLoanRepository(connections), interestRates, new EmiCalculator(), queuedSender),
+                new AdminUserService(users, queuedSender),
+                new NotificationService(outbox, emailSender));
 
         try (TerminalRenderer renderer = TerminalRenderer.openTerminal()) {
             new TuiApplication(renderer).run(AccountScreens.root(context));

@@ -7,7 +7,11 @@ import com.loanmanagement.cli.ConsoleApplication;
 import com.loanmanagement.dao.JdbcLoanRepository;
 import com.loanmanagement.dao.JdbcUserRepository;
 import com.loanmanagement.db.ConnectionFactory;
+import com.loanmanagement.dao.JdbcNotificationRepository;
 import com.loanmanagement.db.SchemaMigrator;
+import com.loanmanagement.notification.EmailSender;
+import com.loanmanagement.notification.OutboxEmailSender;
+import com.loanmanagement.service.NotificationService;
 import com.loanmanagement.notification.SmtpEmailSender;
 import com.loanmanagement.security.PasswordHasher;
 import com.loanmanagement.service.AdminBootstrapper;
@@ -52,15 +56,18 @@ public final class Main {
             }
             AuthenticationService authentication = new AuthenticationService(users, passwordHasher);
             SmtpEmailSender emailSender = new SmtpEmailSender();
-            AdminUserService adminUsers = new AdminUserService(users, emailSender);
+            JdbcNotificationRepository outbox = new JdbcNotificationRepository(connections);
+            EmailSender queuedSender = new OutboxEmailSender(emailSender, outbox);
+            AdminUserService adminUsers = new AdminUserService(users, queuedSender);
+            NotificationService notifications = new NotificationService(outbox, emailSender);
             JdbcLoanRepository loanRepository = new JdbcLoanRepository(connections);
             InterestRatePolicy interestRates = new InterestRatePolicy();
             EmiCalculator emiCalculator = new EmiCalculator();
-            LoanService loans = new LoanService(loanRepository, interestRates, emiCalculator, emailSender);
+            LoanService loans = new LoanService(loanRepository, interestRates, emiCalculator, queuedSender);
             CibilService cibil = new CibilService(users, users, authentication, interestRates, emailSender);
             PasswordResetService passwordResets = new PasswordResetService(users, passwordHasher, emailSender);
             try (Scanner scanner = new Scanner(System.in)) {
-                new ConsoleApplication(scanner, authentication, adminUsers, loans, cibil, passwordResets).run();
+                new ConsoleApplication(scanner, authentication, adminUsers, loans, cibil, passwordResets, notifications).run();
             }
         } catch (RuntimeException exception) {
             System.err.println(exception.getMessage());

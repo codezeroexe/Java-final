@@ -21,6 +21,8 @@ import com.loanmanagement.service.CibilService;
 import com.loanmanagement.service.EmiCalculator;
 import com.loanmanagement.service.InterestRatePolicy;
 import com.loanmanagement.service.LoanService;
+import com.loanmanagement.service.NotificationService;
+import com.loanmanagement.testsupport.InMemoryNotificationRepository;
 import com.loanmanagement.service.PasswordResetService;
 import com.loanmanagement.service.RegisterCommand;
 import com.loanmanagement.tui.screen.FormScreen;
@@ -52,7 +54,8 @@ class AccountScreensTest {
                 new PasswordResetService(users, hasher, sender),
                 new CibilService(users, users, authentication, rates, sender),
                 new LoanService(new InMemoryLoanRepository(), rates, new EmiCalculator(), sender),
-                new AdminUserService(users, sender));
+                new AdminUserService(users, sender),
+                new NotificationService(new InMemoryNotificationRepository(), sender));
     }
 
     private void registerAsha() {
