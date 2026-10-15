@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Java Loan Management System
 
 Console-based loan management application built with Core Java, `Scanner`, JDBC, and MySQL. No frontend or Spring framework. Requirements: [Stage 1](Stage%201.pdf), [Stage 2](Stage%202.pdf), [Stage 3](Stage%203.pdf), [Stage 4](Stage%204.pdf), and [Stage 5](Stage%205.pdf). Implementation roadmap: [`plan.md`](plan.md).
@@ -193,5 +193,3 @@ Add MySQL integration tests for constraints, lockout transactions, migrations, a
 - Not verified: live SMTP delivery. Integration tests use a no-op email sender.
 - Email retry queue and migration rollback tooling are not included. Failed notifications are reported on the console only.
 =======
-# Java-final
->>>>>>> origin/main
