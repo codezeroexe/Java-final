@@ -60,6 +60,13 @@ class ComponentTest {
     }
 
     @Test
+    void menuZeroChoosesTenthItem() {
+        MenuList menu = new MenuList(List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "Logout"));
+        assertEquals(OptionalInt.of(9), menu.handle(typed('0')));
+        assertEquals(OptionalInt.empty(), new MenuList(List.of("a", "b")).handle(typed('0')));
+    }
+
+    @Test
     void textFieldMasksSecretAndKeepsValue() throws IOException {
         TextField password = new TextField("Password", true, 20);
         for (char c : "Secret1!".toCharArray()) {

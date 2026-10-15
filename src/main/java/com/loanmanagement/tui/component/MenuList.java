@@ -10,7 +10,7 @@ import com.loanmanagement.tui.render.TerminalRenderer.Tone;
 import com.loanmanagement.tui.render.TextWidth;
 import com.loanmanagement.tui.screen.Area;
 
-/** Numbered, arrow-navigable list. Up and down wrap. Enter or a digit chooses an entry. */
+/** Numbered, arrow-navigable list. Up and down wrap. Enter or a digit chooses an entry; 0 is the tenth. */
 public final class MenuList {
     private static final String MARKER = "❯ ";
     private static final String BLANK = "  ";
@@ -40,7 +40,8 @@ public final class MenuList {
             return OptionalInt.of(selected);
         } else if (key.getKeyType() == KeyType.Character && key.getCharacter() != null
                 && Character.isDigit(key.getCharacter())) {
-            int choice = key.getCharacter() - '1';
+            // 1-9 pick items 1-9; 0 picks the tenth item, so every item stays reachable by digit.
+            int choice = key.getCharacter() == '0' ? 9 : key.getCharacter() - '1';
             if (choice >= 0 && choice < count) {
                 selected = choice;
                 return OptionalInt.of(choice);
